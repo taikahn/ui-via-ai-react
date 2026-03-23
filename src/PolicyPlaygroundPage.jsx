@@ -147,7 +147,7 @@ export default function PolicyPlaygroundPage() {
   return (
     <div className="app">
       {/* Sidebar */}
-      <nav ref={sidebarRef} style={sidebarWidth ? { width: `${sidebarWidth}px` } : undefined} className={`sidebar ${navOpen ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`}>
+      <nav ref={sidebarRef} style={sidebarWidth && window.innerWidth >= 768 ? { width: `${sidebarWidth}px` } : undefined} className={`sidebar ${navOpen ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-section" data-label="Dashboard" onClick={handleNavItemClick}>
           <span className="sidebar-icon">
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">

@@ -1134,8 +1134,10 @@ body {
 
   .sidebar {
     left: var(--s1);
-    right: var(--s1);
-    width: calc(100% - var(--s2));
+    right: auto;
+    width: max-content !important;
+    min-width: unset !important;
+    max-width: 75vw !important;
     inset-block: var(--s1) var(--s1);
     border-radius: var(--s2);
     transform: translateX(-110%);
@@ -1143,7 +1145,8 @@ body {
 
   .sidebar.open {
     transform: translateX(0);
-    width: calc(100% - var(--s2));
+    width: max-content !important;
+    max-width: 75vw !important;
   }
 
   .topbar {
