@@ -21,7 +21,8 @@ export default function PolicyPlaygroundPage() {
   const [copied, setCopied] = useState(false);
   const [highlight, setHighlight] = useState(false);
   const codeValue = `{
-  "hello": true
+  "hello": true,
+  "world": true
 }`;
 
   const handleCopy = () => {
