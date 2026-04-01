@@ -69,7 +69,7 @@ body {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.68));
   backdrop-filter: blur(20px) saturate(150%);
   -webkit-backdrop-filter: blur(20px) saturate(150%);
-  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.9);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.45);
   z-index: 30;
 }
 
@@ -113,6 +113,8 @@ body {
 .org-container {
   position: relative;
   width: fit-content;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .org-pill {
@@ -129,6 +131,8 @@ body {
     background-color 0.2s ease,
     border-color 0.2s ease;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   justify-content: center;
 }
 
@@ -137,8 +141,17 @@ body {
   border-color: var(--teal);
 }
 
+.org-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
 .org-pill .role {
   opacity: 0.7;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .org-pill .chevron-icon {
@@ -736,7 +749,7 @@ body {
 
 .breadcrumb {
   font-size: 0.75rem;
-  color: var(--muted);
+  color: #a8b2c4;
   margin-bottom: var(--s1);
   margin-top: var(--s1);
 }
@@ -1117,13 +1130,25 @@ body {
     display: none;
   }
 
-  .org-pill {
-    padding: var(--s1) var(--s2);
-    font-size: 0.7rem;
+  .topbar-left,
+  .topbar-right {
+    flex-shrink: 0;
   }
 
   .topbar-center {
+    flex: 1 1 0;
+    min-width: 0;
     margin: 0 var(--s1);
+  }
+
+  .org-container {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .org-pill {
+    padding: var(--s1) var(--s2);
+    font-size: 0.7rem;
   }
 
   .sidebar-resizer,
