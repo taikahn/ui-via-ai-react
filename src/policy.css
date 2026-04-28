@@ -63,6 +63,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--s2);
   padding: var(--s1) var(--s2);
   height: var(--s8); /* 64px */
   border-bottom: 1px solid rgba(148, 163, 184, 0.25);
@@ -107,7 +108,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .org-container {
@@ -692,6 +694,13 @@ body {
   transform: translateY(-1px);
 }
 
+/* Clip nav labels inside the sidebar so they don't escape the right edge while the sidebar is being dragged narrower. */
+.sidebar-section > span:not(.sidebar-icon) {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 .sidebar-section.active {
   background: rgba(0, 196, 179, 0.12);
   color: var(--text);
@@ -1095,11 +1104,6 @@ body {
     padding: 0 var(--s4);
   }
 
-  .topbar-center {
-    display: flex;
-    flex: 0 1 auto;
-  }
-
   /* Hide burger on desktop */
   .burger-label {
     display: none;
@@ -1126,29 +1130,9 @@ body {
 
 /* Mobile-specific adjustments: hide resizer and toggle widget and ensure content uses full width */
 @media (max-width: 767px) {
-  .org-container .company-icon {
-    display: none;
-  }
-
   .topbar-left,
   .topbar-right {
     flex-shrink: 0;
-  }
-
-  .topbar-center {
-    flex: 1 1 0;
-    min-width: 0;
-    margin: 0 var(--s1);
-  }
-
-  .org-container {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .org-pill {
-    padding: var(--s1) var(--s2);
-    font-size: 0.7rem;
   }
 
   .sidebar-resizer,

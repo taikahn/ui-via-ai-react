@@ -41,16 +41,6 @@ export default function PolicyPlaygroundPage() {
   };
 
   useEffect(() => {
-    const onResize = () => {
-      if (window.innerWidth >= 768 && navOpen) {
-        setNavOpen(false);
-      }
-    };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [navOpen]);
-
-  useEffect(() => {
     if (!orgOpen) return;
     const onDocClick = (e) => {
       if (orgRef.current && !orgRef.current.contains(e.target)) {
@@ -106,6 +96,14 @@ export default function PolicyPlaygroundPage() {
   const startWidthRef = useRef(0);
   const startCollapsedRef = useRef(false);
   const DRAG_TOGGLE_THRESHOLD = 12; // pixels of horizontal drag to trigger toggle
+  // While dragging right from a collapsed state, suppress the .collapsed class for a
+  // live preview of the expanded sidebar before the collapsed state actually flips.
+  const [dragExpanding, setDragExpanding] = useState(false);
+  // Track the desktop breakpoint as state so style changes during viewport resizes
+  // re-render the sidebar (instead of relying on a window read in render).
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : true
+  );
 
   useEffect(() => {
     const el = sidebarRef.current;
@@ -115,40 +113,92 @@ export default function PolicyPlaygroundPage() {
     setSidebarWidth(rect.width);
   }, []);
 
-  
-
-  const toggleCollapse = () => {
-    const iconOnlyWidth = 72; // width to show icons only
-    if (!collapsed) {
-      // collapse: save current width and set to icon-only
-      prevSidebarWidthRef.current = sidebarWidth || sidebarMinRef.current;
-      setSidebarWidth(iconOnlyWidth);
-      if (sidebarRef.current) sidebarRef.current.style.width = `${iconOnlyWidth}px`;
-      if (window.innerWidth >= 768) {
+  useEffect(() => {
+    const onResize = () => {
+      const desktop = window.innerWidth >= 768;
+      setIsDesktop((prev) => {
+        if (prev === desktop) return prev;
+        // Crossing the breakpoint: clear or re-apply inline layout styles on the
+        // sidebar/topbar/content/footer so the desktop offset doesn't leak into
+        // mobile (and vice versa). Suspend transitions across the swap so the
+        // adjustment doesn't animate.
         const topbar = document.querySelector('.topbar');
         const content = document.querySelector('.content');
-        if (topbar) topbar.style.left = `${iconOnlyWidth}px`;
-        if (content) content.style.marginLeft = `${iconOnlyWidth}px`;
+        const footer = document.querySelector('.footer');
+        const sb = sidebarRef.current;
+        if (sb) {
+          sb.style.transition = 'none';
+          // Force reflow so the transition reset is picked up before we re-enable.
+          sb.offsetHeight;
+        }
+        if (!desktop) {
+          if (sb) sb.style.width = '';
+          if (topbar) topbar.style.left = '';
+          if (content) content.style.marginLeft = '';
+          if (footer) footer.style.marginLeft = '';
+        } else {
+          const w = collapsed
+            ? ICON_ONLY_WIDTH
+            : prevSidebarWidthRef.current || sidebarWidth || sidebarMinRef.current;
+          setSidebarWidth(w);
+          if (sb) sb.style.width = `${w}px`;
+          if (topbar) topbar.style.left = `${w}px`;
+          if (content) content.style.marginLeft = `${w}px`;
+          if (footer) footer.style.marginLeft = `${w}px`;
+        }
+        if (sb) {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              sb.style.transition = '';
+            });
+          });
+        }
+        return desktop;
+      });
+      if (window.innerWidth >= 768 && navOpen) {
+        setNavOpen(false);
       }
-      setCollapsed(true);
-    } else {
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [navOpen, collapsed, sidebarWidth]);
+
+  const toggleCollapse = () => {
+    if (collapsed) {
+      // expand: restore previous width
       const restore = prevSidebarWidthRef.current || sidebarMinRef.current;
       setSidebarWidth(restore);
       if (sidebarRef.current) sidebarRef.current.style.width = `${restore}px`;
       if (window.innerWidth >= 768) {
         const topbar = document.querySelector('.topbar');
         const content = document.querySelector('.content');
+        const footer = document.querySelector('.footer');
         if (topbar) topbar.style.left = `${restore}px`;
         if (content) content.style.marginLeft = `${restore}px`;
+        if (footer) footer.style.marginLeft = `${restore}px`;
       }
       setCollapsed(false);
+    } else {
+      // collapse: save current width and set to icon-only
+      prevSidebarWidthRef.current = sidebarWidth || sidebarMinRef.current;
+      setSidebarWidth(ICON_ONLY_WIDTH);
+      if (sidebarRef.current) sidebarRef.current.style.width = `${ICON_ONLY_WIDTH}px`;
+      if (window.innerWidth >= 768) {
+        const topbar = document.querySelector('.topbar');
+        const content = document.querySelector('.content');
+        const footer = document.querySelector('.footer');
+        if (topbar) topbar.style.left = `${ICON_ONLY_WIDTH}px`;
+        if (content) content.style.marginLeft = `${ICON_ONLY_WIDTH}px`;
+        if (footer) footer.style.marginLeft = `${ICON_ONLY_WIDTH}px`;
+      }
+      setCollapsed(true);
     }
   };
 
   return (
     <div className="app">
       {/* Sidebar */}
-      <nav ref={sidebarRef} style={sidebarWidth && window.innerWidth >= 768 ? { width: `${sidebarWidth}px` } : undefined} className={`sidebar ${navOpen ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`}>
+      <nav ref={sidebarRef} style={sidebarWidth && isDesktop ? { width: `${sidebarWidth}px` } : undefined} className={`sidebar ${navOpen ? 'open' : ''} ${collapsed && !dragExpanding ? 'collapsed' : ''}`}>
         <div className="sidebar-section" data-label="Dashboard" onClick={handleNavItemClick}>
           <span className="sidebar-icon">
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
@@ -233,6 +283,9 @@ export default function PolicyPlaygroundPage() {
               // If the drag started while expanded, only allow dragging to the left (dx <= 0).
               if (startCollapsedRef.current && dx < 0) return;
               if (!startCollapsedRef.current && dx > 0) return;
+              // Live preview: while dragging right from collapsed, suppress the
+              // .collapsed class so the user sees the expanded styling immediately.
+              if (startCollapsedRef.current && dx > 0) setDragExpanding(true);
               // Calculate target width and enforce bounds:
               // - never go below the icon-only width
               // - when dragging from collapsed, never exceed the original mounted width (sidebarMinRef)
@@ -246,8 +299,10 @@ export default function PolicyPlaygroundPage() {
               if (window.innerWidth >= 768) {
                 const topbar = document.querySelector('.topbar');
                 const content = document.querySelector('.content');
+                const footer = document.querySelector('.footer');
                 if (topbar) topbar.style.left = `${newWidth}px`;
                 if (content) content.style.marginLeft = `${newWidth}px`;
+                if (footer) footer.style.marginLeft = `${newWidth}px`;
               }
             };
 
@@ -257,6 +312,7 @@ export default function PolicyPlaygroundPage() {
               document.body.style.cursor = '';
               document.removeEventListener('mousemove', onMouseMove);
               document.removeEventListener('mouseup', onMouseUp);
+              setDragExpanding(false);
               const dx = ev.clientX - startXRef.current;
               // Only trigger a toggle if dragged in the allowed direction and past threshold
               if (startCollapsedRef.current) {
